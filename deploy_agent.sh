@@ -62,3 +62,9 @@ ask_project_name(){
 
 }
 
+names=("Alice Kayitesi" "Karenzi Bob" "Nyirmavuko Carol" "Ishimwe David" "kemugisha"
+       "Kayitare Frank" "Bajeneza Grace" "Mugisha Henry" "Rugwiro Taylor" "Jack kalisa"
+       "Karen Bugingo" "Leo pierre" "Mia Kayitana" "Shema Noah" "Busingye Olivia"
+       "Paul Kagame" "Bajeneza Sonia" "Kiberinka Rose" "Sam Jakin" "Keza Tina")
+
+       
