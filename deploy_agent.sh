@@ -67,4 +67,44 @@ names=("Alice Kayitesi" "Karenzi Bob" "Nyirmavuko Carol" "Ishimwe David" "kemugi
        "Karen Bugingo" "Leo pierre" "Mia Kayitana" "Shema Noah" "Busingye Olivia"
        "Paul Kagame" "Bajeneza Sonia" "Kiberinka Rose" "Sam Jakin" "Keza Tina")
 
-       
+
+# handle_interrupt: runs when the user presses Ctrl+C or Ctrl+Z during deployment.
+
+handle_interrupt() {
+
+	local zip_name="${project_dir}_archive.zip"
+
+	trap '' INT TSTP
+	echo
+	echo "============================================================="
+	echo" Deployment Interrupted"
+	echo "============================================================="
+
+	if [[ -z "$project_dir" || ! -d "$project_dir" ]]; then
+		info " No project folder exists yet"
+		echo "session closed!"
+		exit 130
+	fi
+
+	if zip -rq "$zip_name" "$PROJECT_DIR"; then
+		ok "Archive created: $zip_name"
+	else
+		echo "ERROR: Archive failed, could not create the zip file."
+		echo " Folder '$project_dir' was kept,nothing lost"
+		exit 130
+	fi
+
+	info "Removing unfinished folder $project_dir ..."
+
+	if rm -rf"$project_dir"; then
+		ok "Folder removed"
+	else 
+		echo "[ERROR] could not remove '$project_dir'."
+	fi
+
+	echo "Session closed"
+	exit 130
+
+}
+
+
