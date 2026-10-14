@@ -76,9 +76,7 @@ handle_interrupt() {
 
 	trap '' INT TSTP
 	echo
-	echo "============================================================="
 	echo" Deployment Interrupted"
-	echo "============================================================="
 
 	if [[ -z "$project_dir" || ! -d "$project_dir" ]]; then
 		info " No project folder exists yet"
@@ -217,9 +215,85 @@ ok "Generate $count students and total-sessions set to 1."
 
 }
 
+set_permissions(){
+
+	local app-file="$target/attendance_checker.py"
+	local config_file="$target/helpers/config.json"
+	
+	chmod +x "$app_file" || fail "Could not makeattendance_checker.p,y executable"
+
+	chmod 600 "config_file" || fail "Could not lock config.json"
+	ok "config.json is private"
+
+	echo "Here is what the permissions look like now:"
+	ls -l "$app_file" "$config_file"
+}
 
 
+update_thresholds(){
 
+local answer warning failure 
+local config_file="$target/helpers/config.json"
 
+read -r -p "Do you want to change attendance alert thresholds? (y/N): " answer
 
+if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
+	info "we are keeping the default thresholds"
+	return
+fi
+
+while true; do
+	read_int "New warning thresholdin percentage" 75 0 100
+	warning=$num
+
+	read_int "New failure threshold" 50 0 100
+	failure=$num
+
+	if [[ $failure -ge $warning ]]; then
+		echo "failure must be lower than warning , try again"
+	else 
+		break
+	fi 
+done
+sed -i "s/\"warning\": *[0-9]*/\"warning\": $warning/" "$config_file" || fail "Could not update warning."
+  sed -i "s/\"failure\": *[0-9]*/\"failure\": $failure/" "$config_file" || fail "Could not update failure."
+
+ chmod 600 "$config_file"
+ ok "Thresholds updated:"
+ grep -E '"warning"|"failure"' "$config_file"
+}
+
+deploy(){
+preflight_checks
+ask_project_name
+
+trap handle_interrupt INT TSTP
+
+create_structure
+install_app_files
+build_roster
+set_permissions
+update_thresholds
+
+trap - INT TSTP
+
+OK "Deployment complete"
+run_app "$target"
+
+}
+
+run_app(){
+local folder=$1
+
+if [[ ! -d "$folder" ]]; then
+	fail "$folder does not exist, deploy first"
+fi
+
+if [[ ! -f "$folder/attendance_checker.py" ]]; then
+fail " $folder is missing ateendance_checker.py"
+fi
+
+info "Lets start the app"
+(cd "$folder" && python3 attendance_checker.py)
+}
 
