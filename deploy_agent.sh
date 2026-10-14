@@ -96,8 +96,8 @@ handle_interrupt() {
 
 	info "Removing unfinished folder $project_dir ..."
 
-	if rm -rf"$project_dir"; then
-		ok "Folder removed"
+	if rm -rf "$project_dir"; then
+		ok "Incomplete directory '$project_dir' removed"
 	else 
 		echo "[ERROR] could not remove '$project_dir'."
 	fi
@@ -107,4 +107,27 @@ handle_interrupt() {
 
 }
 
+#deploying
 
+
+preflight_checks(){
+
+	if ! command -v python3 > /dev/null; then
+		echo "python is not installed"
+		exit 1
+	fi
+
+	if ! command -v zip > /dev/null; then
+		echo "zip is not installed."
+		exit 1
+	fi
+	echo "Python version : $(python3 --version)"
+	
+	local file
+	for file in attendance_checker.py assets.csv config.json; do
+		if [[ ! -f "$template_dir/$file" ]]; then
+			fail "templates/$file is missing , try again"
+		fi
+	done
+	ok "All 3 template files were found."
+}
