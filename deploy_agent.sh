@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 script_path=$(realpath "$0")
 script_dir=$(dirname "$script_path")
@@ -65,7 +65,7 @@ ask_project_name(){
 names=("Alice Kayitesi" "Karenzi Bob" "Nyirmavuko Carol" "Ishimwe David" "kemugisha"
        "Kayitare Frank" "Bajeneza Grace" "Mugisha Henry" "Rugwiro Taylor" "Jack kalisa"
        "Karen Bugingo" "Leo pierre" "Mia Kayitana" "Shema Noah" "Busingye Olivia"
-       "Paul Kagame" "Bajeneza Sonia" "Kiberinka Rose" "Sam Jakin" "Keza Tina")
+       "Paul Ndoba" "Bajeneza Sonia" "Kiberinka Rose" "Sam Jakin" "Keza Tina")
 
 
 # handle_interrupt: runs when the user presses Ctrl+C or Ctrl+Z during deployment.
@@ -76,7 +76,7 @@ handle_interrupt() {
 
 	trap '' INT TSTP
 	echo
-	echo" Deployment Interrupted"
+	echo "Deployment Interrupted"
 
 	if [[ -z "$project_dir" || ! -d "$project_dir" ]]; then
 		info " No project folder exists yet"
@@ -164,7 +164,7 @@ copy_core_files(){
 build_roster() {
 	local choice
 	local roster_file="$target/helpers/assets.csv"
-	local config_file="$target/helpers/config.js"
+	local config_file="$target/helpers/config.json"
 	local template roster="$template_dir/assets.csv"
 
 	echo "How do you want to build your student roster?"
@@ -196,16 +196,16 @@ ok "Copied $num students from the template"
 else
 
 	local count name email number
-	 read-int "How many students (1-${#names[@]}" 10 1 "${#names[@]}"
+	 read_int "How many students (1-${#names[@]}" 10 1 "${#names[@]}"
 	 count=$num
 	 echo "Email, Names, Attendance count, Count, Absence count" >"$roster_file" || fail "couldn't write the roster"
 
 	 number=0
 	 while [[ $number -lt $count ]]; do
 		name="${names[$number]}"
-		email=$(echo "$name" | tr 'A-Z' 'a-z.')@student.com
+		email=$(echo "$name" | tr 'A-Z ' 'a-z.')@student.com
 	       echo "$email,$name,0,0" >> "$roster_file"
-	       number=$((number = 1))
+	       number=$((number + 1))
        done
 
       sed -i -E 's/("total_sessions": *)[0-9]+/\11/' "$config_file" || fail "Could not update config.json."
@@ -217,12 +217,12 @@ ok "Generate $count students and total-sessions set to 1."
 
 set_permissions(){
 
-	local app-file="$target/attendance_checker.py"
+	local app_file="$target/attendance_checker.py"
 	local config_file="$target/helpers/config.json"
 	
 	chmod +x "$app_file" || fail "Could not makeattendance_checker.p,y executable"
 
-	chmod 600 "config_file" || fail "Could not lock config.json"
+	chmod 600 "$config_file" || fail "Could not lock config.json"
 	ok "config.json is private"
 
 	echo "Here is what the permissions look like now:"
@@ -277,7 +277,7 @@ update_thresholds
 
 trap - INT TSTP
 
-OK "Deployment complete"
+ok "Deployment complete"
 run_app "$target"
 
 }
@@ -290,10 +290,74 @@ if [[ ! -d "$folder" ]]; then
 fi
 
 if [[ ! -f "$folder/attendance_checker.py" ]]; then
-fail " $folder is missing ateendance_checker.py"
+fail " $folder is missing attendance_checker.py"
 fi
 
 info "Lets start the app"
 (cd "$folder" && python3 attendance_checker.py)
+}
+
+archive_logs(){
+
+	local saved=0
+
+	echo "First saving a copy of attendance logs."
+	ask_project_name
+
+	if [[ ! -d "$target" ]]; then
+		fail "i could not find $target , deploy it first"
+	fi
+	 local timestamp log_name original copy
+	 timestamp=$(date +%Y%m%d_%H%M%S)
+
+	 mkdir -p "$target/archives/attendance" "$target/archives/absent" || fail "couldn't create the archive folders"
+
+	 for log_name in attendance absent; do 
+		 local original="$target/reports/$logname.log"
+		 copy="$target/archives/$log_name/${log_name}_${timestamp}.log"
+
+		 if [[ ! -f "$original" ]]; then
+			 info " there is no $log_name.log yet" 
+			 continue
+		 fi
+
+		 if cp "$original" "$copy"; then
+			 ok "Saved $log_name.log to $copy"
+			 saved=$((saved + 1))
+		 else
+			 echo "I couldn't save $log_name.log"
+		 fi
+	 done
+
+	 if [[ $saved -eq 0 ]]; then
+		 info "Nothing saved, run the application first and try againq"
+	 else
+		 ok "DONE"
+		 fi
+	 }
+ show_menu(){
+
+ local choice
+
+ while true; do
+	 echo
+	 echo " Attendance Tracker Deploy Agent "
+	 echo "1) Deploy a new project"
+	 echo "2) Run a project"
+	 echo "3) Archive logs"
+	 echo "4) Exit"
+
+		 read -r -p "What would you like to?(choose from 1-4): " choice
+
+	 case "$choice" in
+		 1) deploy ;;
+		 2) ask_project_name
+			 run_app "$target" ;;
+		 3) archive_logs ;;
+		 4) echo "Bye!!" 
+			 exit 0 ;;
+		 *) echo "Choose a number from 1 to 4" ;;
+	 esac
+ done
 }
 
