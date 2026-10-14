@@ -361,3 +361,25 @@ archive_logs(){
  done
 }
 
+
+case "$1" in 
+	--deploy)
+		deploy
+		;;
+	--run)
+		ask_project_name
+		run_app "$target"
+		;;
+	--archive)
+		archive_logs
+		;;
+	"")
+		show_menu
+		;;
+	*)
+		echo "Unknown option: $1"
+		echo "Usage: $0 [--deploy | --run | --archive]"
+		exit 1
+		;;
+esac
+
