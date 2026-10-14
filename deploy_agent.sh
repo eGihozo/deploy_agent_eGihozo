@@ -278,7 +278,6 @@ deploy(){
 project_dir=""	
 preflight_checks
 ask_project_name
-i
 trap handle_interrupt INT TSTP
 
 create_structure
