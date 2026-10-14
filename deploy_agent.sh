@@ -131,3 +131,95 @@ preflight_checks(){
 	done
 	ok "All 3 template files were found."
 }
+
+create_structure(){
+
+	local answer
+
+	if [[ -d "$target" ]]; then
+		read -r -p "$target already exists, Delete and start? (y/n): " answer
+		if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+			rm -rf "$TARGET" || fail "Could not delete $TARGET (permission denied?)."
+			info "Old folder deleted"
+
+
+		else 
+			fail "Stopped. $TARGET already exists and was not changed."
+		fi
+	fi
+
+	mkdir -p "$target/helpers" "$target/reports" || fail "couldnot create folder"
+	project_dir="$target"
+	ok "$target was created with helpers and reports"
+}
+
+
+
+copy_core_files(){
+
+	cp "$template_dir/attendance_checker.py" "$target/attendance_checker.py" || fail "could not copy attendance_cheker file"
+	 
+	cp "$template_dir/config.json" "$target/helpers/" || fail "could not config.json file"
+
+}
+
+build_roster() {
+	local choice
+	local roster_file="$target/helpers/assets.csv"
+	local config_file="$target/helpers/config.js"
+	local template roster="$template_dir/assets.csv"
+
+	echo "How do you want to build your student roster?"
+	echo "A. Copying students from template"
+	echo "B. Generating new students"
+
+	while true; do
+		read -r -p "choose A or B: " choice
+		if [[ "$choice" == "A" || "$choice" == "a" ]]; then
+			choice="A"
+			break
+		elif [[ "$choice" == "b" || "$choice" == "B" ]]; then
+			choice="B"
+			break;
+		else
+			echo " Please Enter A or B"
+		fi 
+	done
+	if [[ "$choice" == "A" ]]; then
+		local lines_in_template=$(grep -c . "$template_roster")
+		local max_students=$((lines_in_template - 1))
+
+		read_int "How many students are there to copy (1-$max_students)" "$max_students" 1 "$max_students"
+
+head -n $((num + 1)) "$template_roster" > "$roster_file" || fail "Could not write the roster."
+ok "Copied $num students from the template"
+ 
+
+else
+
+	local count name email number
+	 read-int "How many students (1-${#names[@]}" 10 1 "${#names[@]}"
+	 count=$num
+	 echo "Email, Names, Attendance count, Count, Absence count" >"$roster_file" || fail "couldn't write the roster"
+
+	 number=0
+	 while [[ $number -lt $count ]]; do
+		name="${names[$number]}"
+		email=$(echo "$name" | tr 'A-Z' 'a-z.')@student.com
+	       echo "$email,$name,0,0" >> "$roster_file"
+	       number=$((number = 1))
+       done
+
+      sed -i -E 's/("total_sessions": *)[0-9]+/\11/' "$config_file" || fail "Could not update config.json."
+
+ok "Generate $count students and total-sessions set to 1."
+	fi
+
+}
+
+
+
+
+
+
+
