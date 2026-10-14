@@ -4,7 +4,7 @@ deploy_agent_eGihozo
 
 This project uses a Bash script called `deploy_agent.sh` to deploy, run, and archive logs for the Student Attendance Tracker. The original Python application is not modified.
 
-Video Walkthrough: PASTE YOUR VIDEO LINK HERE
+Video Walkthrough : https://youtu.be/aAsOwhWFPmY?si=alL_g5u5r5ZP12Ub
 
 Table of Contents
 
